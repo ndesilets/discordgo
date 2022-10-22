@@ -1405,6 +1405,7 @@ func (s *Session) GuildEmojiDelete(guildID, emojiID string) (err error) {
 
 // GuildStickers returns all stickers
 // guildID : The ID of a Guild.
+// TODO test
 func (s *Session) GuildStickers(guildID string) (stickers []*Sticker, err error) {
 	body, err := s.RequestWithBucketID("GET", EndpointGuildStickers(guildID), nil, EndpointGuildStickers(guildID))
 	if err != nil {
@@ -1418,6 +1419,7 @@ func (s *Session) GuildStickers(guildID string) (stickers []*Sticker, err error)
 // GuildSticker returns specified sticker
 // guildID : The ID of a Guild.
 // stickerID : The ID of a Sticker to retrieve
+// TODO test
 func (s *Session) GuildSticker(guildID, stickerID string) (sticker *Sticker, err error) {
 	var body []byte
 	body, err = s.RequestWithBucketID("GET", EndpointGuildSticker(guildID, stickerID), nil, EndpointGuildSticker(guildID, stickerID))
@@ -1446,6 +1448,7 @@ func (s *Session) GuildStickerCreate(guildID string, data *StickerParams) (stick
 // guildID : The ID of a Guild.
 // data : Updated Sticker data.
 // TODO need to consider if sticker data should be left as is or created as separate type (should be fine?)
+// TODO test
 func (s *Session) GuildStickerEdit(guildID, stickerID string, data *StickerParams) (sticker *Sticker, err error) {
 	body, err := s.RequestWithBucketID("PATCH", EndpointGuildSticker(guildID, stickerID), data, EndpointGuildSticker(guildID, stickerID))
 	if err != nil {
@@ -1459,6 +1462,7 @@ func (s *Session) GuildStickerEdit(guildID, stickerID string, data *StickerParam
 // GuildStickerDelete deletes specified sticker
 // guildID : The ID of a Guild.
 // stickerID : The ID of a Sticker to delete
+// TODO test
 func (s *Session) GuildStickerDelete(guildID, stickerID string) (err error) {
 	_, err = s.RequestWithBucketID("DELETE", EndpointGuildSticker(guildID, stickerID), nil, EndpointGuildSticker(guildID, stickerID))
 	return
