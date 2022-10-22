@@ -12,9 +12,12 @@
 package discordgo
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"math"
+	"mime/multipart"
 	"net/http"
 	"regexp"
 	"strings"
@@ -589,6 +592,41 @@ type StickerPack struct {
 	CoverStickerID string     `json:"cover_sticker_id"`
 	Description    string     `json:"description"`
 	BannerAssetID  string     `json:"banner_asset_id"`
+}
+
+// TODO better spot for this?
+type FormWriter interface {
+	Write(*multipart.Writer) error
+}
+
+// StickerParams represents parameters needed to create or update a Sticker.
+type StickerParams struct {
+	// Name of the sticker
+	Name string `json:"name"`
+	// Description of the sticker
+	Description string `json:"description"`
+	// Tags for autocomplete/suggestion (labeled as 'Related Emoji' in Discord app).
+	Tags string `json:"tags"`
+	// File sticker binary data to upload, has to be smaller than 500KB.
+	File []byte
+}
+
+func (sp StickerParams) Write(multipartWriter *multipart.Writer) (err error) {
+	var formWriter io.Writer
+
+	formWriter, err = multipartWriter.CreateFormField("name")
+	_, err = io.Copy(formWriter, strings.NewReader(sp.Name))
+
+	formWriter, err = multipartWriter.CreateFormField("description")
+	_, err = io.Copy(formWriter, strings.NewReader(sp.Description))
+
+	formWriter, err = multipartWriter.CreateFormField("tags")
+	_, err = io.Copy(formWriter, strings.NewReader(sp.Tags))
+
+	formWriter, err = multipartWriter.CreateFormFile("file", sp.Name)
+	_, err = io.Copy(formWriter, bytes.NewReader(sp.File))
+
+	return
 }
 
 // VerificationLevel type definition
@@ -1305,9 +1343,10 @@ func (m *Member) Mention() string {
 }
 
 // AvatarURL returns the URL of the member's avatar
-//    size:    The size of the user's avatar as a power of two
-//             if size is an empty string, no size parameter will
-//             be added to the URL.
+//
+//	size:    The size of the user's avatar as a power of two
+//	         if size is an empty string, no size parameter will
+//	         be added to the URL.
 func (m *Member) AvatarURL(size string) string {
 	if m.Avatar == "" {
 		return m.User.AvatarURL(size)
