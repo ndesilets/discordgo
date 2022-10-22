@@ -19,6 +19,7 @@ import (
 	"math"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"regexp"
 	"strings"
 	"sync"
@@ -611,6 +612,15 @@ type StickerParams struct {
 	File []byte
 }
 
+// TODO
+// same thing as multipart.Writer.CreateFormFile but lets you specify custom content type
+func createFormFile(w *multipart.Writer, filename, contentType string) (io.Writer, error) {
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", filename))
+	h.Set("Content-Type", contentType)
+	return w.CreatePart(h)
+}
+
 func (sp StickerParams) Write(multipartWriter *multipart.Writer) (err error) {
 	var formWriter io.Writer
 
@@ -623,7 +633,7 @@ func (sp StickerParams) Write(multipartWriter *multipart.Writer) (err error) {
 	formWriter, err = multipartWriter.CreateFormField("tags")
 	_, err = io.Copy(formWriter, strings.NewReader(sp.Tags))
 
-	formWriter, err = multipartWriter.CreateFormFile("file", sp.Name)
+	formWriter, err = createFormFile(multipartWriter, sp.Name, "image/png")
 	_, err = io.Copy(formWriter, bytes.NewReader(sp.File))
 
 	return
