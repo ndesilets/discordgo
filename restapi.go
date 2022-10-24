@@ -111,6 +111,16 @@ func (s *Session) RequestWithBucketID(method, urlStr string, data interface{}, b
 	return s.request(method, urlStr, "application/json", body, bucketID, 0)
 }
 
+type FormWriter interface {
+	Write(multipartWriter *multipart.Writer) error
+}
+
+type WriteFormWith func(multipartWriter *multipart.Writer) error
+
+func (f WriteFormWith) Write(multipartWriter *multipart.Writer) error {
+	return f(multipartWriter)
+}
+
 // FormRequestWithBucketID makes POST/PUT/PATCH Requests to Discord REST API with form data.
 func (s *Session) FormRequestWithBucketID(method, urlStr string, data FormWriter, bucketID string) (response []byte, err error) {
 	body := &bytes.Buffer{}
@@ -1435,7 +1445,25 @@ func (s *Session) GuildSticker(guildID, stickerID string) (sticker *Sticker, err
 // guildID : The ID of a Guild.
 // data : New Sticker data.
 func (s *Session) GuildStickerCreate(guildID string, data *StickerParams) (sticker *Sticker, err error) {
-	body, err := s.FormRequestWithBucketID("POST", EndpointGuildStickers(guildID), data, EndpointGuildStickers(guildID))
+	formData := WriteFormWith(func(multipartWriter *multipart.Writer) error {
+		var formWriter io.Writer
+
+		formWriter, err = multipartWriter.CreateFormField("name")
+		_, err = io.Copy(formWriter, strings.NewReader(data.Name))
+
+		formWriter, err = multipartWriter.CreateFormField("description")
+		_, err = io.Copy(formWriter, strings.NewReader(data.Description))
+
+		formWriter, err = multipartWriter.CreateFormField("tags")
+		_, err = io.Copy(formWriter, strings.NewReader(data.Tags))
+
+		formWriter, err = createFormFile(multipartWriter, "file", data.Name, "image/png")
+		_, err = io.Copy(formWriter, bytes.NewReader(data.File))
+
+		return err
+	})
+
+	body, err := s.FormRequestWithBucketID("POST", EndpointGuildStickers(guildID), formData, EndpointGuildStickers(guildID))
 	if err != nil {
 		return
 	}

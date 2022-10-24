@@ -12,14 +12,10 @@
 package discordgo
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"math"
-	"mime/multipart"
 	"net/http"
-	"net/textproto"
 	"regexp"
 	"strings"
 	"sync"
@@ -595,11 +591,6 @@ type StickerPack struct {
 	BannerAssetID  string     `json:"banner_asset_id"`
 }
 
-// TODO better spot for this?
-type FormWriter interface {
-	Write(*multipart.Writer) error
-}
-
 // StickerParams represents parameters needed to create or update a Sticker.
 type StickerParams struct {
 	// Name of the sticker
@@ -610,33 +601,6 @@ type StickerParams struct {
 	Tags string `json:"tags"`
 	// File sticker binary data to upload, has to be smaller than 500KB.
 	File []byte
-}
-
-// TODO
-// same thing as multipart.Writer.CreateFormFile but lets you specify custom content type
-func createFormFile(w *multipart.Writer, filename, contentType string) (io.Writer, error) {
-	h := make(textproto.MIMEHeader)
-	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, "file", filename))
-	h.Set("Content-Type", contentType)
-	return w.CreatePart(h)
-}
-
-func (sp StickerParams) Write(multipartWriter *multipart.Writer) (err error) {
-	var formWriter io.Writer
-
-	formWriter, err = multipartWriter.CreateFormField("name")
-	_, err = io.Copy(formWriter, strings.NewReader(sp.Name))
-
-	formWriter, err = multipartWriter.CreateFormField("description")
-	_, err = io.Copy(formWriter, strings.NewReader(sp.Description))
-
-	formWriter, err = multipartWriter.CreateFormField("tags")
-	_, err = io.Copy(formWriter, strings.NewReader(sp.Tags))
-
-	formWriter, err = createFormFile(multipartWriter, sp.Name, "image/png")
-	_, err = io.Copy(formWriter, bytes.NewReader(sp.File))
-
-	return
 }
 
 // VerificationLevel type definition

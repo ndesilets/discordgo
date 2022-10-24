@@ -76,6 +76,18 @@ func MultipartBodyWithJSON(data interface{}, files []*File) (requestContentType 
 	return bodywriter.FormDataContentType(), body.Bytes(), nil
 }
 
+// createFormFile same thing as multipart.Writer.CreateFormFile but lets you specify content type
+// w           : multipart form writer
+// filename    : name of file
+// contentType : http content type
+// see: https://cs.opensource.google/go/go/+/refs/tags/go1.19.2:src/mime/multipart/writer.go;l=145
+func createFormFile(w *multipart.Writer, fieldname, filename, contentType string) (io.Writer, error) {
+	h := make(textproto.MIMEHeader)
+	h.Set("Content-Disposition", fmt.Sprintf(`form-data; name="%s"; filename="%s"`, quoteEscaper.Replace(fieldname), quoteEscaper.Replace(filename)))
+	h.Set("Content-Type", contentType)
+	return w.CreatePart(h)
+}
+
 func avatarURL(avatarHash, defaultAvatarURL, staticAvatarURL, animatedAvatarURL, size string) string {
 	var URL string
 	if avatarHash == "" {
